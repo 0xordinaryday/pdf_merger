@@ -18,6 +18,7 @@ import os
 import pypdfium2 as pdfium
 from pathlib import Path
 from shutil import rmtree
+from wx.lib.agw.scrolledthumbnail import (ScrolledThumbnail, Thumb, NativeImageHandler)
 
 wildcard = "PDF files (*.pdf)|*.pdf|" \
             "All files (*.*)|*.*"
@@ -51,64 +52,35 @@ class pdfMerger(wx.Frame):
 
     def InitUI(self):
 
-        panel = wx.Panel(self)
-
         font = wx.SystemSettings.GetFont(wx.SYS_SYSTEM_FONT)
         font.SetFamily(wx.FONTFAMILY_TELETYPE)
         font.SetPointSize(9)
-
-        vbox = wx.BoxSizer(wx.VERTICAL)
-
-        hbox1 = wx.BoxSizer(wx.HORIZONTAL)
-        st1 = wx.StaticText(panel, label='Class Name')
-        st1.SetFont(font)
-        hbox1.Add(st1, flag=wx.RIGHT, border=8)
-        tc = wx.TextCtrl(panel)
-        hbox1.Add(tc, proportion=1)
-        vbox.Add(hbox1, flag=wx.EXPAND|wx.LEFT|wx.RIGHT|wx.TOP, border=10)
-
-        vbox.Add((-1, 10))
-
-        hbox2 = wx.BoxSizer(wx.HORIZONTAL)
-        st2 = wx.StaticText(panel, label='Matching Classes')
-        st2.SetFont(font)
-        hbox2.Add(st2)
-        vbox.Add(hbox2, flag=wx.LEFT | wx.TOP, border=10)
-
-        vbox.Add((-1, 10))
-
-        hbox3 = wx.BoxSizer(wx.HORIZONTAL)
-        tc2 = wx.TextCtrl(panel, style=wx.TE_MULTILINE)
-        hbox3.Add(tc2, proportion=1, flag=wx.EXPAND)
-        vbox.Add(hbox3, proportion=1, flag=wx.LEFT|wx.RIGHT|wx.EXPAND,
-            border=10)
-
-        vbox.Add((-1, 25))
-
-        hbox4 = wx.BoxSizer(wx.HORIZONTAL)
-        cb1 = wx.CheckBox(panel, label='Case Sensitive')
-        cb1.SetFont(font)
-        hbox4.Add(cb1)
-        cb2 = wx.CheckBox(panel, label='Nested Classes')
-        cb2.SetFont(font)
-        hbox4.Add(cb2, flag=wx.LEFT, border=10)
-        cb3 = wx.CheckBox(panel, label='Non-Project classes')
-        cb3.SetFont(font)
-        hbox4.Add(cb3, flag=wx.LEFT, border=10)
-        vbox.Add(hbox4, flag=wx.LEFT, border=10)
-
-        vbox.Add((-1, 25))
-
-        hbox5 = wx.BoxSizer(wx.HORIZONTAL)
-        openFileDlgBtn = wx.Button(panel, label='Add File', size=(70, 30))
+        
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        
+        self.splitter = wx.SplitterWindow(self, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.SP_3D )
+        
+        self.scroll = ScrolledThumbnail(self.splitter, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
+        self.scroll.SetScrollRate(5, 5)
+        self.panel = wx.Panel(self.splitter, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
+        button_sizer = wx.BoxSizer( wx.HORIZONTAL )
+        
+        openFileDlgBtn = wx.Button(self.panel, label='Add File', size=(70, 30))
         openFileDlgBtn.Bind(wx.EVT_BUTTON, self.onOpenFile)
-        hbox5.Add(openFileDlgBtn)
-        saveFileDlgBtn = wx.Button(panel, label='Save File', size=(70, 30))
+        button_sizer.Add(openFileDlgBtn, 0, wx.ALL, 5 )
+        saveFileDlgBtn = wx.Button(self.panel, label='Save File', size=(70, 30))
         saveFileDlgBtn.Bind(wx.EVT_BUTTON, self.onSaveFile)
-        hbox5.Add(saveFileDlgBtn, flag=wx.LEFT|wx.BOTTOM, border=5)
-        vbox.Add(hbox5, flag=wx.ALIGN_RIGHT|wx.RIGHT, border=10)
-
-        panel.SetSizer(vbox)
+        button_sizer.Add(saveFileDlgBtn, 0, wx.ALL, 5 )
+        
+        self.panel.SetSizer(button_sizer)
+        self.panel.Layout()
+        button_sizer.Fit(self.panel)
+        self.splitter.SplitHorizontally( self.scroll, self.panel, 820)
+        sizer.Add(self.splitter, 1, wx.EXPAND, 5)
+        
+        self.SetSizer(sizer)
+        self.Layout()
+        self.Centre(wx.BOTH)
 
     def onOpenFile(self, event):
         """
@@ -129,6 +101,7 @@ class pdfMerger(wx.Frame):
                 print(path)
             for image, suffix in pdfium.render_pdf(path):
                 image.save(f'{thumbnaildir}/output_{suffix}.jpg')
+            self.showDir()            
         dlg.Destroy()
         
     def onSaveFile(self, event):
@@ -144,6 +117,15 @@ class pdfMerger(wx.Frame):
             path = dlg.GetPath()
             print("You chose the following filename: %s" % path)
         dlg.Destroy()
+        
+    def showDir(self):
+        thumbnaildir = "C:/Temp/thumbnails"
+        files = os.listdir(thumbnaildir)
+        thumbs = []
+        for f in files:
+            if os.path.splitext(f)[1] in [".jpg", ".gif", ".png"]:
+                thumbs.append(Thumb(thumbnaildir, f, caption=f, imagehandler=NativeImageHandler))
+        self.scroll.ShowThumbs(thumbs)
         
     def onClose(self, event):
         # delete all the thumbnails, and the directory
