@@ -37,6 +37,7 @@ class PDFMerger(Frame):
         print("You chose the following file: " + filename)
         for image, suffix in pdfium.render_pdf(filename):
             image.save(f'{thumbnaildir}/output_{suffix}.jpg')
+        redraw()
 
     def initUI(self):
         self.master.title("Buttons")
@@ -74,13 +75,17 @@ def makedir():
 def displayImg(img):
     image = Image.open(img)
     photo = ImageTk.PhotoImage(image)
-    photos.append(photo)#keep references!
-    newPhoto_label = Label(image=photo)
-    newPhoto_label.pack()
+    photos.append(photo) #keep references!
+    label = Label(image=photo)
+    label.image = photo
+    label.pack()
 
-# for file in glob.glob("*.jpg"):
-#     displayImg(file)
-#     print(file)       
+def redraw():
+    print("called")
+    for myfile in Path("C:/Temp/thumbnails").glob("**/*"):
+        if myfile.is_file():
+            displayImg(myfile)
+            print(myfile)       
 
 def onClose():
     for path in Path("C:/Temp/thumbnails").glob("**/*"):
