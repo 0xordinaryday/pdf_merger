@@ -16,9 +16,9 @@ notebook.pack(pady=10, expand=True)
 
 def AddFile():
     ftypes = [('PDF files', '*.pdf'), ('All files', '*')]
-    filename = filedialog.askopenfilename()
-    print("You chose the following file: " + filename)
-    pdf_splitter(filename)
+    filenames = filedialog.askopenfilenames() # returns a tuple even if only one entry selected
+    print(filenames)
+    # pdf_splitter(filename)
 
 # create frames
 extract = ttk.Frame(notebook, width=400, height=280)
