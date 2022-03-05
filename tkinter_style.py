@@ -19,8 +19,24 @@ import glob, os
 import pypdfium2 as pdfium
 from pathlib import Path
 
+def donothing():
+   filewin = Toplevel(root)
+   button = Button(filewin, text="Do nothing button")
+   button.pack()
+
 root = Tk()
 photos = []
+menubar = Menu(root)
+filemenu = Menu(menubar, tearoff=0)
+filemenu.add_command(label="New", command=donothing)
+filemenu.add_command(label="Open", command=donothing)
+filemenu.add_command(label="Save", command=donothing)
+filemenu.add_command(label="Save as...", command=donothing)
+filemenu.add_command(label="Close", command=donothing)
+
+filemenu.add_separator()
+
+filemenu.add_command(label="Exit", command=root.quit)
 
 class PDFMerger(Frame):
 
@@ -31,12 +47,14 @@ class PDFMerger(Frame):
     def AddFile(self):
         ftypes = [('PDF files', '*.pdf'), ('All files', '*')]
         thumbnaildir = makedir()
+        size = 128, 128
         # dlg = filedialog.Open(self, filetypes = ftypes)
         # fl = dlg.show()
         filename = filedialog.askopenfilename()
         print("You chose the following file: " + filename)
         for image, suffix in pdfium.render_pdf(filename):
-            image.save(f'{thumbnaildir}/output_{suffix}.jpg')
+            image.thumbnail(size)
+            image.save(f'{thumbnaildir}/thumb_{suffix}.jpg')
         redraw()
 
     def initUI(self):
@@ -98,6 +116,7 @@ def onClose():
 def main():
 
     # root = tkinter.Tk()
+    root.config(menu=menubar)
     root.geometry("300x200+300+300")
     app = PDFMerger()
     root.wm_protocol("WM_DELETE_WINDOW", onClose)
