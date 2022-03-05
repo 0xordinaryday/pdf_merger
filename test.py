@@ -5,7 +5,7 @@ from wx.lib.agw.scrolledthumbnail import (ScrolledThumbnail, Thumb, NativeImageH
 class MyFrame(wx.Frame):
 
   def __init__(self, parent):
-    wx.Frame.__init__(self, parent, -1, "ScrolledThumb usage example", size=(400,300))
+    wx.Frame.__init__(self, parent, -1, "Ya boy", size=(1200,300))
     
     self.scroll = ScrolledThumbnail(self, -1, size=(400,300))
     

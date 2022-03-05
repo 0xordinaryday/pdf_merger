@@ -16,6 +16,7 @@ import wx
 import wx.xrc
 import os
 import pypdfium2 as pdfium
+import time
 from pathlib import Path
 from shutil import rmtree
 from wx.lib.agw.scrolledthumbnail import (ScrolledThumbnail, Thumb, NativeImageHandler)
@@ -62,6 +63,8 @@ class pdfMerger(wx.Frame):
         
         self.scroll = ScrolledThumbnail(self.splitter, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.HSCROLL|wx.VSCROLL )
         self.scroll.SetScrollRate(5, 5)
+        self.scroll.EnableDragging(self)
+        self.scroll.EnableToolTips(self)
         self.panel = wx.Panel(self.splitter, wx.ID_ANY, wx.DefaultPosition, wx.DefaultSize, wx.TAB_TRAVERSAL )
         button_sizer = wx.BoxSizer( wx.HORIZONTAL )
         
@@ -124,7 +127,12 @@ class pdfMerger(wx.Frame):
         thumbs = []
         for f in files:
             if os.path.splitext(f)[1] in [".jpg", ".gif", ".png"]:
-                thumbs.append(Thumb(thumbnaildir, f, caption=f, imagehandler=NativeImageHandler))
+                statinfo = os.stat(os.path.join(thumbnaildir, f))
+                size = statinfo.st_size
+                modtime = statinfo.st_mtime
+                TIME_FMT = '%d %b %Y, %H:%M:%S'
+                lastmod = time.strftime(TIME_FMT, time.localtime(modtime))
+                thumbs.append(Thumb(thumbnaildir, f, caption=f, size=size, lastmod=lastmod, imagehandler=NativeImageHandler))
         self.scroll.ShowThumbs(thumbs)
         
     def onClose(self, event):
