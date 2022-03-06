@@ -23,18 +23,38 @@ notebook = ttk.Notebook(root)
 notebook.pack(pady=10, expand=True)
 
 ##############################################
-# Extract functions
+# Shared functions
 
-def AddFileForEE(flag):
+def AddFileShared(flag):
     # shared with explode, pass flag to EESetText
     ftypes = [('PDF files', '*.pdf'), ('All files', '*')]
     filename = filedialog.askopenfilename() 
-    EESetText(filename, flag)
+    if flag < 3:
+        EESetText(filename, flag)
+    if flag == 3:
+        SetDeleteText(filename)
     
 def CountPages(filepath):
     # must be a PDF
     pdf = PyPDF2.PdfFileReader(filepath)
     return pdf.getNumPages()
+    
+def SetPages(numberOfPages, comboBox):
+    pagelist = [] # reset if not already
+    for i in range(numberOfPages):
+        pagelist.append(str(i+1))
+    comboBox['values'] = pagelist
+    
+def ClearFilesFromExtract(comboBox, labelName):
+    comboBox['values'] = []
+    labelName.set("Choose a file")
+    # extractFilePath = ''    
+    
+# End shared functions
+##############################################
+    
+##############################################
+# Extract functions
     
 def EESetText(filepath, flag):
     # shared with explode, flag controls behaviour
@@ -52,22 +72,11 @@ def EESetText(filepath, flag):
     else:
         if flag == 1:
             var_to_set.set("File is: {} \nFile has {} pages, which page should I extract?".format(filepath, CountPages(filepath)))
-            SetPages(CountPages(filepath))
+            SetPages(CountPages(filepath), extractCombo)
         else:
             var_to_set.set("File is: {} \nFile has {} pages, time to explode?".format(filepath, CountPages(filepath)))
         
-def SetPages(numberOfPages):
-    vlist = [] # reset if not already
-    for i in range(numberOfPages):
-        vlist.append(str(i+1))
-    extractCombo['values'] = vlist
-    
-def ClearFilesFromExtract():
-    vlist = []
-    extractCombo['values'] = vlist
-    extract_label.set("Choose a file")
-    extractFilePath = ''
-    
+   
 def DoExtraction():
     textbox_text = extract_label.get()
     pattern = "File is: (.*?)\n"
@@ -81,7 +90,7 @@ def DoExtraction():
     save_filename = filedialog.asksaveasfilename() 
     with open(save_filename, 'wb') as out:
         pdf_writer.write(out)
-    print('Created: {}'.format(save_filename)) 
+    # print('Created: {}'.format(save_filename)) 
     tk.messagebox.showinfo(title='Alert', message='Extraction Complete!')
     
 # End extract functions
@@ -94,8 +103,7 @@ def DoExplode():
     
     fname = os.path.splitext(os.path.basename(filepath))[0]
     directory = os.path.dirname(filepath) + '/'
-    print(fname, directory)
-
+    
     pdf = PyPDF2.PdfFileReader(filepath)
     for page in range(pdf.getNumPages()):
         pdf_writer = PyPDF2.PdfFileWriter()
@@ -105,7 +113,7 @@ def DoExplode():
         with open(output_filename, 'wb') as out:
             pdf_writer.write(out)
             
-        print('Created: {}'.format(output_filename))
+        # print('Created: {}'.format(output_filename))
     tk.messagebox.showinfo(title='Alert', message='Kaboom!')
 
 ##############################################
@@ -133,7 +141,7 @@ def add_files(filelist):
 def getContents():
     # get current contents of listbox
     listsize = merge_filename_box.size()
-    print(merge_filename_box.get(0,listsize-1))
+    # print(merge_filename_box.get(0,listsize-1))
     return merge_filename_box.get(0,listsize-1)        
         
 def ClearFiles():
@@ -150,9 +158,58 @@ def DoMerger():
     mergeFile.write(save_filename)
     tk.messagebox.showinfo(title='Alert', message='Merge Complete!')  
 
-
 # End merge functions
 ############################################## 
+
+##############################################
+# Delete functions
+
+def SetDeleteText(filepath):
+    filename, extension = os.path.splitext(filepath)
+    if extension.lower() != '.pdf':
+        delete_label.set("File is: {} \nFile is not a PDF, cannot delete.".format(filepath))
+    elif CountPages(filepath) == 1:
+        delete_label.set("File is: {} \nThis only has one page, so there is nothing to delete.".format(filepath))
+    else:
+        countOfPages = CountPages(filepath)
+        delete_label.set("File is: {} \nFile has {} pages, set pages to delete.".format(filepath, countOfPages))
+        SetPages(countOfPages, deleteCombo_start)
+        SetPages(countOfPages, deleteCombo_end)
+        
+def DoDelete():
+    # check if valid
+    try:
+        startnumber = int(deleteCombo_start.get())
+        endnumber = int(deleteCombo_end.get())
+    except ValueError as ve:
+        tk.messagebox.showinfo(title='Alert', message='Set yo pages') 
+        return None
+    if endnumber < startnumber:
+        tk.messagebox.showinfo(title='Alert', message='Last page to delete cannot be lower than first page!') 
+        return None
+    
+    # assuming validity    
+    save_filename = filedialog.asksaveasfilename()
+    textbox_text = delete_label.get()
+    pattern = "File is: (.*?)\n"
+    filepath = re.search(pattern, textbox_text).group(1)
+    
+    fname = os.path.splitext(os.path.basename(filepath))[0]
+    directory = os.path.dirname(filepath) + '/'
+    
+    pdf = PyPDF2.PdfFileReader(filepath)
+    pdf_writer = PyPDF2.PdfFileWriter()
+    for page in range(pdf.getNumPages()):
+        if page +1 < startnumber or page +1 > endnumber: 
+            pdf_writer.addPage(pdf.getPage(page))
+            with open(save_filename, 'wb') as out:
+                pdf_writer.write(out)
+
+    tk.messagebox.showinfo(title='Alert', message='File written.')        
+    
+# End delete functions
+##############################################     
+    
         
 class DragDropListbox(tk.Listbox):
     """ A Tkinter listbox with drag'n'drop reordering of entries. """
@@ -163,7 +220,6 @@ class DragDropListbox(tk.Listbox):
         self.bind('<Button-1>', self.setCurrent)
         self.bind('<B1-Motion>', self.shiftSelection)
         self.curIndex = None
-        # super().__init__('Listbox')
 
     def setCurrent(self, event):
         self.curIndex = self.nearest(event.y)
@@ -230,11 +286,11 @@ merge_filename_box.grid(row=3, column=0, columnspan=2)
 ##############################################
 # Extract GUI elements
 
-closeButton = ttk.Button(extract, text="Clear", command = ClearFilesFromExtract) # ClearFilesFromExtract
+closeButton = ttk.Button(extract, text="Clear", command=lambda: ClearFilesFromExtract(extractCombo, extract_label))
 closeButton.grid(row=1, column=1, padx=(10,10), pady=(10, 10), sticky = tk.W)   
-addFileButton = ttk.Button(extract, text="Add File", command=lambda: AddFileForEE(1)) # AddFileForEE
+addFileButton = ttk.Button(extract, text="Add File", command=lambda: AddFileShared(1)) # Need lambda to pass argument
 addFileButton.grid(row=1, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
-extractButton = ttk.Button(extract, text="Extract", command = DoExtraction) # DoExtraction
+extractButton = ttk.Button(extract, text="Extract", command = DoExtraction)
 extractButton.grid(row=5, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
 
 # Add information text to extract
@@ -261,7 +317,7 @@ extractCombo.grid(row=4, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W+tk
 ##############################################
 # Explode GUI elements
 
-addFileButton = ttk.Button(explode, text="Add File", command=lambda: AddFileForEE(2)) # Flag as explode
+addFileButton = ttk.Button(explode, text="Add File", command=lambda: AddFileShared(2)) # Need lambda to pass argument
 addFileButton.grid(row=1, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
 explodeButton = ttk.Button(explode, text="Explode", command = DoExplode)
 explodeButton.grid(row=5, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
@@ -279,6 +335,39 @@ label = tk.Label(explode, textvariable = explode_label, justify=tk.LEFT, anchor=
 label.grid(row=3, column=0, padx=(10,10), pady=(10, 10), columnspan=2, sticky = tk.W+tk.E)
 
 # End Explode GUI elements
+##############################################
+
+##############################################
+# Delete GUI elements
+
+addFileButton = ttk.Button(delete, text="Add File", command=lambda: AddFileShared(3)) # 
+addFileButton.grid(row=1, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
+deleteButton = ttk.Button(delete, text="Delete", command = DoDelete) 
+deleteButton.grid(row=5, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
+
+# Add information text to delete
+delete_information = tk.StringVar()
+delete_information.set("This function allows for the deletion of one or more pages from a multi-page PDF")
+label = tk.Label(delete, textvariable = delete_information, justify=tk.LEFT, anchor="w")
+label.grid(row=2, column=0, padx=(10,10), pady=(10, 10), columnspan=4, sticky = tk.W+tk.E)
+
+# Add label to delete
+delete_label = tk.StringVar()
+delete_label.set("Choose a file with the 'Add File' button")
+label = tk.Label(delete, textvariable = delete_label, justify=tk.LEFT, anchor="w")
+label.grid(row=3, column=0, padx=(10,10), pady=(10, 10), columnspan=2, sticky = tk.W+tk.E)
+
+# Add comboboxes for pagenumbers to delete
+delete_vlist_start = []
+delete_vlist_end = []
+deleteCombo_start = ttk.Combobox(delete, values = vlist)
+deleteCombo_end = ttk.Combobox(delete, values = vlist)
+deleteCombo_start.set("First page to delete")
+deleteCombo_end.set("Last page to delete")
+deleteCombo_start.grid(row=4, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W+tk.E)
+deleteCombo_end.grid(row=4, column=1, padx=(10,10), pady=(10, 10), sticky = tk.W+tk.E)
+
+# End Extract GUI elements
 ##############################################
 
 ##################
