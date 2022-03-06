@@ -125,12 +125,9 @@ def AddFile():
     ftypes = [('PDF files', '*.pdf'), ('All files', '*')]
     filenames = filedialog.askopenfilenames() # returns a tuple even if only one entry selected
     for filename in filenames:
-        # display_name = os.path.split(filename)[1]
         if filename not in filename_list:
             filename_list.append(filename)
-    # print(filename_list)
     add_files(filename_list)
-    # pdf_splitter(filename)
     
 def add_files(filelist):
     # Loop thru to fill listbox
@@ -369,30 +366,6 @@ deleteCombo_end.grid(row=4, column=1, padx=(10,10), pady=(10, 10), sticky = tk.W
 
 # End Extract GUI elements
 ##############################################
-
-##################
-# Extractor
-##################
-
-def pdf_splitter(path):
-    fname = os.path.splitext(os.path.basename(path))[0]
-    directory = os.path.dirname(path) + '/'
-    
-    pdf = PdfFileReader(path)
-    for page in range(pdf.getNumPages()):
-        pdf_writer = PdfFileWriter()
-        pdf_writer.addPage(pdf.getPage(page))
-        output_filename = directory + '{}_page_{}.pdf'.format(
-            fname, page+1)
-        
-        with open(output_filename, 'wb') as out:
-            pdf_writer.write(out)
-            
-        print('Created: {}'.format(output_filename))
-        
-       
-    
-###################    
 
 png_base64_string = """iVBORw0KGgoAAAANSUhEUgAAAJYAAABWCAIAAACii/gBAAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV8TtSIVBzuIOGSoThb8QhylikWwUNoKrTqYXPohNGlIUlwcBdeCgx+LVQcXZ10dXAVB8APE0clJ0UVK/F9SaBHjwXE/3t173L0DhHqZaVbHGKDptpmKx6RsbkUKvkJEFwSMQ5SZZSTSCxn4jq97BPh6F+VZ/uf+HL1q3mJAQCKeZYZpE68TT2/aBud94jArySrxOfGoSRckfuS64vEb56LLAs8Mm5nUHHGYWCq2sdLGrGRqxFPEEVXTKV/Ieqxy3uKslauseU/+wlBeX05zneYQ4lhEAklIUFDFBsqwEaVVJ8VCivZjPv5B158kl0KuDTByzKMCDbLrB/+D391ahckJLykUAzpfHOdjGAjuAo2a43wfO07jBBCfgSu95a/UgZlP0mstLXIE9G0DF9ctTdkDLneAgSdDNmVXEmkKhQLwfkbflAP6b4GeVa+35j5OH4AMdbV0AxwcAiNFyl7zeXd3e2//nmn29wMsp3KLNIn8WwAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+YDBgI5I8FlX5UAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAvUlEQVR42u3dMQ6AIAxAUWuce//blgPUgbGQ90fGvqAxJhBV9ejkXiNAKIRCiFBn9/WliDCXsfUvCLvQg1QIhRChEAqhECIUQiEUQoRCKIRCiFAIhVAIEQqhEAohQiEUQiFEKIRCKIQIhVAIhRChEAqhECIUQiEUQoRCKIRCiFAIhVAIEeoOwsw0o+FFPzTfJQeTc8mBd6EQCqEQIhRCIRRChEIohEKIUAiFUAgv6uevvexCIRRChEIohNpvARgwD823LLzRAAAAAElFTkSuQmCC"""
 
