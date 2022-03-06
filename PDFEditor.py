@@ -25,26 +25,36 @@ notebook.pack(pady=10, expand=True)
 ##############################################
 # Extract functions
 
-def AddFileForExtract():
+def AddFileForEE(flag):
+    # shared with explode, pass flag to EESetText
     ftypes = [('PDF files', '*.pdf'), ('All files', '*')]
     filename = filedialog.askopenfilename() 
-    # TODO
-    ExtractSetText(filename)
+    EESetText(filename, flag)
     
 def CountPages(filepath):
     # must be a PDF
     pdf = PyPDF2.PdfFileReader(filepath)
     return pdf.getNumPages()
     
-def ExtractSetText(filepath):
+def EESetText(filepath, flag):
+    # shared with explode, flag controls behaviour
     filename, extension = os.path.splitext(filepath)
+    var_to_set = ''
+    which_function = ''
+    if flag == 1:
+        var_to_set, which_function = extract_label, 'extract'
+    elif flag == 2:
+        var_to_set, which_function = explode_label, 'explode'
     if extension.lower() != '.pdf':
-        var.set("File is: {} \nFile is not a PDF, cannot extract.".format(filepath))
+        var_to_set.set("File is: {} \nFile is not a PDF, cannot {}.".format(filepath, which_function))
     elif CountPages(filepath) == 1:
-        var.set("File is: {} \nThis only has one page, so there is nothing to extract.".format(filepath))
-    else: 
-        var.set("File is: {} \nFile has {} pages, which page should I extract?".format(filepath, CountPages(filepath)))
-        SetPages(CountPages(filepath))
+        var_to_set.set("File is: {} \nThis only has one page, so there is nothing to {}.".format(filepath, which_function))
+    else:
+        if flag == 1:
+            var_to_set.set("File is: {} \nFile has {} pages, which page should I extract?".format(filepath, CountPages(filepath)))
+            SetPages(CountPages(filepath))
+        else:
+            var_to_set.set("File is: {} \nFile has {} pages, time to explode?".format(filepath, CountPages(filepath)))
         
 def SetPages(numberOfPages):
     vlist = [] # reset if not already
@@ -55,11 +65,11 @@ def SetPages(numberOfPages):
 def ClearFilesFromExtract():
     vlist = []
     extractCombo['values'] = vlist
-    var.set("Choose a file")
+    extract_label.set("Choose a file")
     extractFilePath = ''
     
 def DoExtraction():
-    textbox_text = var.get()
+    textbox_text = extract_label.get()
     pattern = "File is: (.*?)\n"
     filepath = re.search(pattern, textbox_text).group(1)
     # print(filepath)
@@ -74,6 +84,29 @@ def DoExtraction():
     print('Created: {}'.format(save_filename)) 
     tk.messagebox.showinfo(title='Alert', message='Extraction Complete!')
     
+# End extract functions
+##############################################
+
+def DoExplode():
+    textbox_text = explode_label.get()
+    pattern = "File is: (.*?)\n"
+    filepath = re.search(pattern, textbox_text).group(1)
+    
+    fname = os.path.splitext(os.path.basename(filepath))[0]
+    directory = os.path.dirname(filepath) + '/'
+    print(fname, directory)
+
+    pdf = PyPDF2.PdfFileReader(filepath)
+    for page in range(pdf.getNumPages()):
+        pdf_writer = PyPDF2.PdfFileWriter()
+        pdf_writer.addPage(pdf.getPage(page))
+        output_filename = directory + '{}_page_{}.pdf'.format(fname, page+1)
+        
+        with open(output_filename, 'wb') as out:
+            pdf_writer.write(out)
+            
+        print('Created: {}'.format(output_filename))
+    tk.messagebox.showinfo(title='Alert', message='Kaboom!')
 
 ##############################################
 # Merge functions
@@ -199,7 +232,7 @@ merge_filename_box.grid(row=3, column=0, columnspan=2)
 
 closeButton = ttk.Button(extract, text="Clear", command = ClearFilesFromExtract) # ClearFilesFromExtract
 closeButton.grid(row=1, column=1, padx=(10,10), pady=(10, 10), sticky = tk.W)   
-addFileButton = ttk.Button(extract, text="Add File", command = AddFileForExtract) # AddFileForExtract
+addFileButton = ttk.Button(extract, text="Add File", command=lambda: AddFileForEE(1)) # AddFileForEE
 addFileButton.grid(row=1, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
 extractButton = ttk.Button(extract, text="Extract", command = DoExtraction) # DoExtraction
 extractButton.grid(row=5, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
@@ -211,9 +244,9 @@ label = tk.Label(extract, textvariable = extract_information, justify=tk.LEFT, a
 label.grid(row=2, column=0, padx=(10,10), pady=(10, 10), columnspan=4, sticky = tk.W+tk.E)
 
 # Add label to extract
-var = tk.StringVar()
-var.set("Choose a file with the 'Add File' button")
-label = tk.Label(extract, textvariable = var, justify=tk.LEFT, anchor="w")
+extract_label = tk.StringVar()
+extract_label.set("Choose a file with the 'Add File' button")
+label = tk.Label(extract, textvariable = extract_label, justify=tk.LEFT, anchor="w")
 label.grid(row=3, column=0, padx=(10,10), pady=(10, 10), columnspan=2, sticky = tk.W+tk.E)
 
 # Add combobox for pagenumbers to extract
@@ -223,6 +256,29 @@ extractCombo.set("Choose a page")
 extractCombo.grid(row=4, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W+tk.E)
 
 # End Extract GUI elements
+##############################################
+
+##############################################
+# Explode GUI elements
+
+addFileButton = ttk.Button(explode, text="Add File", command=lambda: AddFileForEE(2)) # Flag as explode
+addFileButton.grid(row=1, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
+explodeButton = ttk.Button(explode, text="Explode", command = DoExplode)
+explodeButton.grid(row=5, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
+
+# Add information text to explode
+explode_information = tk.StringVar()
+explode_information.set("Explode will split a multi-page PDF into single pages")
+label = tk.Label(explode, textvariable = explode_information, justify=tk.LEFT, anchor="w")
+label.grid(row=2, column=0, padx=(10,10), pady=(10, 10), columnspan=4, sticky = tk.W+tk.E)
+
+# Add label to explode
+explode_label = tk.StringVar()
+explode_label.set("Choose a file with the 'Add File' button")
+label = tk.Label(explode, textvariable = explode_label, justify=tk.LEFT, anchor="w")
+label.grid(row=3, column=0, padx=(10,10), pady=(10, 10), columnspan=2, sticky = tk.W+tk.E)
+
+# End Explode GUI elements
 ##############################################
 
 ##################
