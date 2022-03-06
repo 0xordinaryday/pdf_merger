@@ -8,8 +8,15 @@ import re
 
 # root window
 root = tk.Tk()
-root.geometry('500x300')
+root.geometry('500x400')
 root.wm_title('PDF Editor')
+
+# Create a style
+style = ttk.Style(root)
+# Set the theme with the theme_use method
+style.theme_use('winnative')
+# alt, clam, classic, default, vista, winnative, xpnative
+# winnative, clam and alt are ok
 
 # create a notebook
 notebook = ttk.Notebook(root)
@@ -34,7 +41,7 @@ def ExtractSetText(filepath):
     if extension.lower() != '.pdf':
         var.set("File is: {} \nFile is not a PDF, cannot extract.".format(filepath))
     elif CountPages(filepath) == 1:
-        var.set("File is: {} \nThis only has one page already.".format(filepath))
+        var.set("File is: {} \nThis only has one page, so there is nothing to extract.".format(filepath))
     else: 
         var.set("File is: {} \nFile has {} pages, which page should I extract?".format(filepath, CountPages(filepath)))
         SetPages(CountPages(filepath))
@@ -146,13 +153,13 @@ extract = ttk.Frame(notebook, width=500, height=350)
 merge = ttk.Frame(notebook, width=500, height=350)
 replace = ttk.Frame(notebook, width=500, height=350)
 delete = ttk.Frame(notebook, width=500, height=350)
-split = ttk.Frame(notebook, width=500, height=350)
+explode = ttk.Frame(notebook, width=500, height=350)
 
 extract.grid(column=0, row=0, padx=15, pady=15)
 merge.grid(column=0, row=0, padx=15, pady=15)
 replace.grid(column=0, row=0, padx=15, pady=15)
 delete.grid(column=0, row=0, padx=15, pady=15)
-split.grid(column=0, row=0, padx=15, pady=15)
+explode.grid(column=0, row=0, padx=15, pady=15)
 
 # extract.rowconfigure(1, {'minsize': 300})
 extract.columnconfigure(1, {'minsize': 300})
@@ -162,21 +169,27 @@ notebook.add(extract, text='Extract')
 notebook.add(merge, text='Merge')
 notebook.add(replace, text='Replace')
 notebook.add(delete, text='Delete')
-notebook.add(split, text='Split')
+notebook.add(explode, text='Explode')
 
 ##############################################
 # Merge GUI elements
        
 closeButton = ttk.Button(merge, text="Clear", command = ClearFiles)
-closeButton.grid(row=0, column=1, padx=(10,10), pady=(10, 10))
+closeButton.grid(row=1, column=1, padx=(10,10), pady=(10, 10), sticky = tk.W)
 addFileButton = ttk.Button(merge, text="Add File", command = AddFile)
-addFileButton.grid(row=0, column=0, padx=(10,10), pady=(10, 10))
+addFileButton.grid(row=1, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
 mergeButton = ttk.Button(merge, text="Merge Files", command = DoMerger)
-mergeButton.grid(row=3, column=0, padx=(10,10), pady=(10, 10))
+mergeButton.grid(row=5, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
+
+# Add information text to merge
+merge_information = tk.StringVar()
+merge_information.set("This function allows for the merger (contatenation) of multiple PDFs.\nDrag and drop file names to reorder as required.")
+label = tk.Label(merge, textvariable = merge_information, justify=tk.LEFT, anchor="w")
+label.grid(row=2, column=0, padx=(10,10), pady=(10, 10), columnspan=4, sticky = tk.W+tk.E)
 
 # add filelist to merge
 merge_filename_box = DragDropListbox(merge, width=80)
-merge_filename_box.grid(row=2, column=0, columnspan=2)
+merge_filename_box.grid(row=3, column=0, columnspan=2)
 
 # End Merge GUI elements
 ##############################################
@@ -185,23 +198,29 @@ merge_filename_box.grid(row=2, column=0, columnspan=2)
 # Extract GUI elements
 
 closeButton = ttk.Button(extract, text="Clear", command = ClearFilesFromExtract) # ClearFilesFromExtract
-closeButton.grid(row=0, column=1, padx=(10,10), pady=(10, 10), sticky = tk.W)   
+closeButton.grid(row=1, column=1, padx=(10,10), pady=(10, 10), sticky = tk.W)   
 addFileButton = ttk.Button(extract, text="Add File", command = AddFileForExtract) # AddFileForExtract
-addFileButton.grid(row=0, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
-mergeButton = ttk.Button(extract, text="Extract", command = DoExtraction) # DoExtraction
-mergeButton.grid(row=4, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
+addFileButton.grid(row=1, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
+extractButton = ttk.Button(extract, text="Extract", command = DoExtraction) # DoExtraction
+extractButton.grid(row=5, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W)   
+
+# Add information text to extract
+extract_information = tk.StringVar()
+extract_information.set("This function allows for the extraction of a single page from a multi-page PDF")
+label = tk.Label(extract, textvariable = extract_information, justify=tk.LEFT, anchor="w")
+label.grid(row=2, column=0, padx=(10,10), pady=(10, 10), columnspan=4, sticky = tk.W+tk.E)
 
 # Add label to extract
 var = tk.StringVar()
-var.set("Choose a file")
+var.set("Choose a file with the 'Add File' button")
 label = tk.Label(extract, textvariable = var, justify=tk.LEFT, anchor="w")
-label.grid(row=2, column=0, padx=(10,10), pady=(10, 10), columnspan=2, sticky = tk.W+tk.E)
+label.grid(row=3, column=0, padx=(10,10), pady=(10, 10), columnspan=2, sticky = tk.W+tk.E)
 
 # Add combobox for pagenumbers to extract
 vlist = []
 extractCombo = ttk.Combobox(extract, values = vlist)
 extractCombo.set("Choose a page")
-extractCombo.grid(row=3, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W+tk.E)
+extractCombo.grid(row=4, column=0, padx=(10,10), pady=(10, 10), sticky = tk.W+tk.E)
 
 # End Extract GUI elements
 ##############################################
@@ -230,6 +249,8 @@ def pdf_splitter(path):
     
 ###################    
 
+png_base64_string = """iVBORw0KGgoAAAANSUhEUgAAAJYAAABWCAIAAACii/gBAAABhGlDQ1BJQ0MgcHJvZmlsZQAAKJF9kT1Iw0AcxV8TtSIVBzuIOGSoThb8QhylikWwUNoKrTqYXPohNGlIUlwcBdeCgx+LVQcXZ10dXAVB8APE0clJ0UVK/F9SaBHjwXE/3t173L0DhHqZaVbHGKDptpmKx6RsbkUKvkJEFwSMQ5SZZSTSCxn4jq97BPh6F+VZ/uf+HL1q3mJAQCKeZYZpE68TT2/aBud94jArySrxOfGoSRckfuS64vEb56LLAs8Mm5nUHHGYWCq2sdLGrGRqxFPEEVXTKV/Ieqxy3uKslauseU/+wlBeX05zneYQ4lhEAklIUFDFBsqwEaVVJ8VCivZjPv5B158kl0KuDTByzKMCDbLrB/+D391ahckJLykUAzpfHOdjGAjuAo2a43wfO07jBBCfgSu95a/UgZlP0mstLXIE9G0DF9ctTdkDLneAgSdDNmVXEmkKhQLwfkbflAP6b4GeVa+35j5OH4AMdbV0AxwcAiNFyl7zeXd3e2//nmn29wMsp3KLNIn8WwAAAAlwSFlzAAAuIwAALiMBeKU/dgAAAAd0SU1FB+YDBgI5I8FlX5UAAAAZdEVYdENvbW1lbnQAQ3JlYXRlZCB3aXRoIEdJTVBXgQ4XAAAAvUlEQVR42u3dMQ6AIAxAUWuce//blgPUgbGQ90fGvqAxJhBV9ejkXiNAKIRCiFBn9/WliDCXsfUvCLvQg1QIhRChEAqhECIUQiEUQoRCKIRCiFAIhVAIEQqhEAohQiEUQiFEKIRCKIQIhVAIhRChEAqhECIUQiEUQoRCKIRCiFAIhVAIEeoOwsw0o+FFPzTfJQeTc8mBd6EQCqEQIhRCIRRChEIohEKIUAiFUAgv6uevvexCIRRChEIohNpvARgwD823LLzRAAAAAElFTkSuQmCC"""
+
 menubar = tk.Menu(root)
 
 root.config(menu=menubar)
@@ -239,4 +260,5 @@ file_menu.add_separator()
 file_menu.add_command(label="Exit", command=root.quit)
 menubar.add_cascade(label="File", menu=file_menu)
 
+root.iconphoto(False, tk.PhotoImage(data=png_base64_string))
 root.mainloop()
